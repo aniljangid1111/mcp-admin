@@ -60,6 +60,7 @@ export async function POST(request) {
 
                     product_data: {
                         name: item.product.name,
+
                         images: item.product.imageUrl
                             ? [item.product.imageUrl]
                             : [],
@@ -73,9 +74,11 @@ export async function POST(request) {
                 quantity: item.quantity,
             })),
 
-            success_url: `${process.env.MCP_BASE_URL}/checkout?cart=${cart.id}&success=true`,
+            success_url:
+                `${process.env.MCP_BASE_URL}/checkout?cart=${cart.id}&success=true`,
 
-            cancel_url: `${process.env.MCP_BASE_URL}/checkout?cart=${cart.id}`,
+            cancel_url:
+                `${process.env.MCP_BASE_URL}/checkout?cart=${cart.id}`,
 
             metadata: {
                 cartId: cart.id,
@@ -86,6 +89,7 @@ export async function POST(request) {
             success: true,
             url: session.url,
         });
+
     } catch (error) {
         console.error("Stripe checkout error:", error);
 

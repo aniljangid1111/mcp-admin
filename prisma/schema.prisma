@@ -46,3 +46,78 @@ model CartItem {
 
   @@unique([cartId, productId])
 }
+
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELLED
+  FAILED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+model Order {
+  id                String      @id @default(cuid())
+  cartId            String
+  status            OrderStatus @default(PENDING)
+
+  customerName      String?
+  customerEmail     String?
+  customerPhone     String?
+  addressLine1      String?
+  addressLine2      String?
+  city              String?
+  state             String?
+  postalCode        String?
+  country           String?
+
+  currency          String      @default("usd")
+  subtotalAmount    Int
+  totalAmount       Int
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  items             OrderItem[]
+  payment           Payment?
+
+  @@index([cartId])
+  @@index([status])
+  @@index([customerEmail])
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  productId   String
+  productName String
+  imageUrl    String?
+  unitPrice   Int
+  quantity    Int
+  createdAt   DateTime @default(now())
+
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
+model Payment {
+  id                        String        @id @default(cuid())
+  orderId                   String        @unique
+  stripeCheckoutSessionId   String?       @unique
+  stripePaymentIntentId     String?       @unique
+  amount                    Int
+  currency                  String        @default("usd")
+  status                    PaymentStatus @default(PENDING)
+  paidAt                    DateTime?
+  createdAt                 DateTime      @default(now())
+  updatedAt                 DateTime      @updatedAt
+
+  order                     Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+}

@@ -5,7 +5,7 @@ export async function POST(request) {
   try {
     const body = await request.json();
 
-    const { name, price, content, documentUrl } = body;
+    const { name, price, content, imageUrl, documentUrl } = body;
 
     if (!name || !price || !content) {
       return NextResponse.json(
@@ -23,6 +23,7 @@ export async function POST(request) {
         price: Number(price),
         content,
         documentUrl: documentUrl || null,
+        imageUrl: imageUrl || null,
       },
     });
 

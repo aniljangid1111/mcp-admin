@@ -1,4 +1,4 @@
-
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useEffect, useState } from "react";
@@ -11,8 +11,8 @@ export default function DashboardPage() {
     const [error, setError] = useState("");
 
     async function loadProducts() {
+        setLoading(true);
         try {
-            setLoading(true);
             setError("");
 
             const response = await fetch("/api/products", {
@@ -34,8 +34,41 @@ export default function DashboardPage() {
     }
 
     useEffect(() => {
-        loadProducts();
+        let ignore = false;
+
+        async function loadInitial() {
+            try {
+                const response = await fetch("/api/products", {
+                    cache: "no-store",
+                });
+
+                const data = await response.json();
+
+                if (!ignore) {
+                    if (!response.ok) {
+                        throw new Error(data.message || "Failed to load products");
+                    }
+                    setProducts(data.products || []);
+                }
+            } catch (err) {
+                if (!ignore) {
+                    setError(err.message || "Something went wrong");
+                }
+            } finally {
+                if (!ignore) {
+                    setLoading(false);
+                }
+            }
+        }
+
+        loadInitial();
+
+        return () => {
+            ignore = true;
+        };
     }, []);
+
+
 
     const filteredProducts = products.filter((product) =>
         product.name.toLowerCase().includes(search.toLowerCase())
@@ -75,6 +108,24 @@ export default function DashboardPage() {
     return (
         <main className="min-h-screen bg-[#f7f8fa] px-4 py-8 sm:px-6">
             <div className="mx-auto max-w-7xl">
+                {/* Navigation Tabs */}
+                <div className="mb-6 flex items-center justify-between border-b border-gray-200 pb-4">
+                    <nav className="flex space-x-6">
+                        <Link
+                            href="/admin/dashboard"
+                            className="border-b-2 border-black pb-2 text-sm font-semibold text-gray-900"
+                        >
+                            Products
+                        </Link>
+                        <Link
+                            href="/admin/orders"
+                            className="text-sm font-medium text-gray-500 transition hover:text-gray-900"
+                        >
+                            Orders
+                        </Link>
+                    </nav>
+                </div>
+
                 <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <p className="mb-2 text-sm text-gray-500">

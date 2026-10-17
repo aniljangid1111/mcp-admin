@@ -31,19 +31,28 @@ export default function ViewProductClient({ productId }) {
     }, [productId]);
 
     if (loading) {
-        return <main className="p-8 text-gray-500">Loading product...</main>;
+        return (
+            <main className="flex min-h-[70vh] items-center justify-center bg-[#f7f8fa] px-4">
+                <div className="flex flex-col items-center gap-3 text-center">
+                    <div className="h-9 w-9 animate-spin rounded-full border-3 border-emerald-500 border-t-transparent" />
+                    <p className="text-sm font-medium text-slate-600">Loading product...</p>
+                </div>
+            </main>
+        );
     }
 
     if (error || !product) {
         return (
-            <main className="p-8">
-                <p className="text-red-600">{error || "Product not found"}</p>
-                <Link
-                    href="/admin/dashboard"
-                    className="mt-4 inline-block underline"
-                >
-                    Back to Products
-                </Link>
+            <main className="flex min-h-[70vh] items-center justify-center bg-[#f7f8fa] px-4">
+                <div className="flex flex-col items-center gap-3 text-center">
+                    <p className="text-sm font-medium text-rose-600">{error || "Product not found"}</p>
+                    <Link
+                        href="/admin/dashboard"
+                        className="rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800"
+                    >
+                        ← Back to Products
+                    </Link>
+                </div>
             </main>
         );
     }

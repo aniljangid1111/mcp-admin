@@ -189,8 +189,9 @@ export default function DashboardPage() {
                             </button>
                         </div>
                     ) : loading ? (
-                        <div className="p-12 text-center text-sm text-gray-500">
-                            Loading products...
+                        <div className="flex flex-col items-center justify-center gap-3 p-16 text-center text-sm text-gray-500">
+                            <div className="h-7 w-7 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
+                            <span>Loading products...</span>
                         </div>
                     ) : filteredProducts.length === 0 ? (
                         <div className="p-12 text-center">
@@ -276,7 +277,7 @@ export default function DashboardPage() {
                                                     <Link
                                                         href={`/admin/products/${product.id}`}
                                                         title="View product"
-                                                        className="rounded-md border border-gray-200 px-3 py-2 hover:bg-gray-100"
+                                                        className="rounded-md border text-black border-gray-200 px-3 py-2 hover:bg-gray-100"
                                                     >
                                                         View
                                                     </Link>
@@ -285,7 +286,7 @@ export default function DashboardPage() {
 
                                                         href={`/admin/products/edit/${product.id}`}
                                                         title="Edit product"
-                                                        className="rounded-md border border-gray-200 px-3 py-2 hover:bg-gray-100"
+                                                        className="rounded-md border text-black  font-normal border-gray-200 px-3 py-2 hover:bg-gray-100 "
                                                     >
                                                         Edit
                                                     </Link>

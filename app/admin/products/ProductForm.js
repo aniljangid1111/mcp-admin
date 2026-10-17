@@ -158,8 +158,11 @@ export default function ProductForm({ mode = "add", productId }) {
 
     if (loading) {
         return (
-            <main className="min-h-screen bg-[#f7f8fa] p-8">
-                <p className="text-gray-600">Loading product details...</p>
+            <main className="flex min-h-[70vh] items-center justify-center bg-[#f7f8fa] px-4">
+                <div className="flex flex-col items-center gap-3 text-center">
+                    <div className="h-9 w-9 animate-spin rounded-full border-3 border-emerald-500 border-t-transparent" />
+                    <p className="text-sm font-medium text-slate-600">Loading product details...</p>
+                </div>
             </main>
         );
     }

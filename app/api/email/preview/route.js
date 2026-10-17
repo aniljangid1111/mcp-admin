@@ -34,7 +34,11 @@ export async function GET(request) {
     ],
   };
 
-  const html = generateOrderEmailHtml({ order: mockOrder, isOwnerCopy: isOwner });
+  const html = generateOrderEmailHtml({
+    order: mockOrder,
+    isOwnerCopy: isOwner,
+    isWebPreview: true,
+  });
 
   return new NextResponse(html, {
     status: 200,

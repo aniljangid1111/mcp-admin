@@ -15,12 +15,6 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  function handleFillDemo() {
-    setEmail("admin@cleanergybattery.com");
-    setPassword("admin123");
-    setError("");
-  }
-
   async function handleSubmit(e) {
     e.preventDefault();
     if (!email || !password) {
@@ -81,12 +75,6 @@ function LoginForm() {
               </span>
             </div>
 
-            <div className="mt-3.5 flex items-center justify-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                Admin Secure Portal
-              </span>
-            </div>
 
             <h1 className="mt-3 text-2xl font-extrabold text-slate-900 tracking-tight">
               Sign In to Admin
@@ -146,7 +134,7 @@ function LoginForm() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@cleanergybattery.com"
+                  placeholder="Enter your email"
                   autoComplete="email"
                   required
                   className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-10 pr-3.5 text-sm text-slate-900 placeholder-slate-400 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
@@ -266,31 +254,6 @@ function LoginForm() {
             </button>
           </form>
 
-          {/* Quick Demo Credentials Box */}
-          <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50/80 p-3.5">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
-                Default Credentials
-              </span>
-              <button
-                type="button"
-                onClick={handleFillDemo}
-                className="text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline"
-              >
-                Auto-fill
-              </button>
-            </div>
-            <div className="mt-1.5 space-y-0.5 font-mono text-[11px] text-slate-600">
-              <div>
-                <span className="text-slate-400">Email:</span>{" "}
-                admin@cleanergybattery.com
-              </div>
-              <div>
-                <span className="text-slate-400">Pass:</span>{" "}
-                admin123
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Footer */}

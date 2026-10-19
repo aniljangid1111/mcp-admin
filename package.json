@@ -6,8 +6,7 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
-    "lint": "eslint",
-    "change-password": "node scripts/change-password.js"
+    "lint": "eslint"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",

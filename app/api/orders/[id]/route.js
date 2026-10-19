@@ -1,8 +1,17 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { authenticateAdminRequest } from "@/lib/auth";
 
 export async function GET(request, { params }) {
   try {
+    const admin = await authenticateAdminRequest(request);
+    if (!admin) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized. Admin authentication required." },
+        { status: 401 }
+      );
+    }
+
     const { id } = await params;
 
     const order = await prisma.order.findUnique({
@@ -35,6 +44,14 @@ export async function GET(request, { params }) {
 
 export async function PATCH(request, { params }) {
   try {
+    const admin = await authenticateAdminRequest(request);
+    if (!admin) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized. Admin authentication required." },
+        { status: 401 }
+      );
+    }
+
     const { id } = await params;
     const body = await request.json();
     const { status } = body;
@@ -80,6 +97,14 @@ export async function PATCH(request, { params }) {
 
 export async function DELETE(request, { params }) {
   try {
+    const admin = await authenticateAdminRequest(request);
+    if (!admin) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized. Admin authentication required." },
+        { status: 401 }
+      );
+    }
+
     const { id } = await params;
 
     await prisma.order.delete({
@@ -98,3 +123,4 @@ export async function DELETE(request, { params }) {
     );
   }
 }
+

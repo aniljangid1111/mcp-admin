@@ -4,10 +4,19 @@ import path from "path";
 import os from "os";
 import cloudinary from "@/lib/cloudinary";
 import { extractPdfSpecs } from "@/lib/pdfAnalyzer";
+import { authenticateAdminRequest } from "@/lib/auth";
 
 export async function POST(request) {
   let tempFilePath = null;
   try {
+    const admin = await authenticateAdminRequest(request);
+    if (!admin) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized. Admin authentication required." },
+        { status: 401 }
+      );
+    }
+
     const formData = await request.formData();
     const file = formData.get("file");
 

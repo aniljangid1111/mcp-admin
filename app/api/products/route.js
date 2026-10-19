@@ -1,8 +1,17 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { authenticateAdminRequest } from "@/lib/auth";
 
 export async function POST(request) {
   try {
+    const admin = await authenticateAdminRequest(request);
+    if (!admin) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized. Admin authentication required." },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
 
     const {
@@ -16,11 +25,12 @@ export async function POST(request) {
       pdfText,
     } = body;
 
-    if (!name || !price || !content) {
+    const numPrice = Number(price);
+    if (!name?.trim() || isNaN(numPrice) || numPrice <= 0 || !content?.trim()) {
       return NextResponse.json(
         {
           success: false,
-          message: "Name, price and content are required",
+          message: "Valid name, positive price and content are required",
         },
         { status: 400 }
       );

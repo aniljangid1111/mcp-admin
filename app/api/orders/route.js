@@ -1,8 +1,19 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { authenticateAdminRequest } from "@/lib/auth";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(request) {
   try {
+    const admin = await authenticateAdminRequest(request);
+    if (!admin) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized. Admin authentication required." },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
     const search = searchParams.get("search");

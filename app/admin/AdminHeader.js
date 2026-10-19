@@ -59,7 +59,7 @@ export default function AdminHeader() {
             type="button"
             onClick={handleLogout}
             disabled={loggingOut}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-600 shadow-sm transition hover:bg-rose-50 hover:border-rose-300 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-600 shadow-sm transition hover:bg-rose-50 hover:border-rose-300 disabled:opacity-50 cursor-pointer"
           >
             <svg
               className="h-3.5 w-3.5"

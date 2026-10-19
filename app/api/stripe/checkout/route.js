@@ -39,18 +39,52 @@ export async function POST(request) {
             );
         }
 
-        const items = cart.items.map((item) => ({
-            productId: item.productId,
-            productName: item.product.name,
-            imageUrl: item.product.imageUrl,
-            unitPrice: Math.round(Number(item.price) * 100),
-            quantity: item.quantity,
-        }));
+        const items = [];
+        for (const item of cart.items) {
+            if (!item.product) {
+                return NextResponse.json(
+                    { success: false, error: "One or more products in cart no longer exist" },
+                    { status: 400 }
+                );
+            }
+
+            const rawPrice = Number(item.product.price);
+            const quantity = parseInt(item.quantity, 10);
+
+            if (isNaN(rawPrice) || rawPrice <= 0) {
+                return NextResponse.json(
+                    { success: false, error: `Invalid price for product ${item.product.name}` },
+                    { status: 400 }
+                );
+            }
+
+            if (isNaN(quantity) || quantity <= 0) {
+                return NextResponse.json(
+                    { success: false, error: `Invalid quantity for product ${item.product.name}` },
+                    { status: 400 }
+                );
+            }
+
+            items.push({
+                productId: item.productId,
+                productName: item.product.name,
+                imageUrl: item.product.imageUrl,
+                unitPrice: Math.round(rawPrice * 100),
+                quantity,
+            });
+        }
 
         const subtotalAmount = items.reduce(
             (sum, item) => sum + item.unitPrice * item.quantity,
             0
         );
+
+        if (subtotalAmount <= 0) {
+            return NextResponse.json(
+                { success: false, error: "Order total must be greater than zero" },
+                { status: 400 }
+            );
+        }
 
         // Create a pending order before redirecting to Stripe.
         const order = await prisma.order.create({

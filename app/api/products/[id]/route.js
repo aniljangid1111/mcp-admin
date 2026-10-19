@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { authenticateAdminRequest } from "@/lib/auth";
 
 // GET: Fetch one product by ID
 export async function GET(request, { params }) {
@@ -34,6 +35,14 @@ export async function GET(request, { params }) {
 // PUT: Update an existing product
 export async function PUT(request, { params }) {
     try {
+        const admin = await authenticateAdminRequest(request);
+        if (!admin) {
+            return NextResponse.json(
+                { success: false, message: "Unauthorized. Admin authentication required." },
+                { status: 401 }
+            );
+        }
+
         const { id } = await params;
         const body = await request.json();
 
@@ -54,13 +63,13 @@ export async function PUT(request, { params }) {
             price === null ||
             price === "" ||
             !Number.isFinite(Number(price)) ||
-            Number(price) < 0 ||
+            Number(price) <= 0 ||
             !content?.trim()
         ) {
             return NextResponse.json(
                 {
                     success: false,
-                    message: "Valid name, price and content are required",
+                    message: "Valid name, positive price and content are required",
                 },
                 { status: 400 }
             );
@@ -105,6 +114,14 @@ export async function PUT(request, { params }) {
 // DELETE: Delete a product
 export async function DELETE(request, { params }) {
     try {
+        const admin = await authenticateAdminRequest(request);
+        if (!admin) {
+            return NextResponse.json(
+                { success: false, message: "Unauthorized. Admin authentication required." },
+                { status: 401 }
+            );
+        }
+
         const { id } = await params;
 
         await prisma.product.delete({

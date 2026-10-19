@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -125,16 +124,53 @@ export default function ViewProductClient({ productId }) {
                         </p>
                     </div>
 
+                    {product.specifications && (
+                        <div className="mt-8 rounded-xl border border-gray-200 bg-slate-50/70 p-6">
+                            <div className="flex items-center gap-2">
+                                <h2 className="font-semibold text-gray-900">
+                                    Technical Specifications (Extracted from PDF)
+                                </h2>
+                                <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800">
+                                    Database Saved
+                                </span>
+                            </div>
+                            <div className="mt-3 whitespace-pre-wrap font-mono text-xs leading-6 text-gray-800">
+                                {product.specifications}
+                            </div>
+                        </div>
+                    )}
+
                     {product.documentUrl && (
-                        <div className="mt-6">
-                            <a
-                                href={product.documentUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-sm font-medium text-blue-600 underline"
-                            >
-                                View Product Document
-                            </a>
+                        <div className="mt-8 rounded-xl border border-emerald-200 bg-emerald-50/40 p-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 text-red-600">
+                                        <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-semibold text-gray-900">
+                                            {product.documentName || "Product Specification Document"}
+                                        </p>
+                                        <p className="text-xs text-gray-500">
+                                            Attached PDF document
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <a
+                                    href={product.documentUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-xs font-medium text-emerald-700 shadow-xs hover:bg-emerald-50"
+                                >
+                                    <span>View / Download PDF</span>
+                                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                    </svg>
+                                </a>
+                            </div>
                         </div>
                     )}
                 </div>

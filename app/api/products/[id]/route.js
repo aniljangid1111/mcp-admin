@@ -1,4 +1,3 @@
-
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
@@ -38,7 +37,16 @@ export async function PUT(request, { params }) {
         const { id } = await params;
         const body = await request.json();
 
-        const { name, price, content, imageUrl, documentUrl } = body;
+        const {
+            name,
+            price,
+            content,
+            imageUrl,
+            documentUrl,
+            documentName,
+            specifications,
+            pdfText,
+        } = body;
 
         if (
             !name?.trim() ||
@@ -66,6 +74,9 @@ export async function PUT(request, { params }) {
                 content: content.trim(),
                 ...(imageUrl !== undefined && { imageUrl }),
                 ...(documentUrl !== undefined && { documentUrl }),
+                ...(documentName !== undefined && { documentName }),
+                ...(specifications !== undefined && { specifications }),
+                ...(pdfText !== undefined && { pdfText }),
             },
         });
 

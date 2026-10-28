@@ -124,8 +124,58 @@ export async function DELETE(request, { params }) {
 
         const { id } = await params;
 
-        await prisma.product.delete({
+        const existingProduct = await prisma.product.findUnique({
             where: { id },
+        });
+
+        if (!existingProduct) {
+            return NextResponse.json(
+                { success: false, message: "Product not found" },
+                { status: 404 }
+            );
+        }
+
+        await prisma.$transaction(async (tx) => {
+            const cartItems = await tx.cartItem.findMany({
+                where: { productId: id },
+                select: { cartId: true },
+            });
+
+            const affectedCartIds = [...new Set(cartItems.map((ci) => ci.cartId))];
+
+            if (cartItems.length > 0) {
+                await tx.cartItem.deleteMany({
+                    where: { productId: id },
+                });
+
+                for (const cartId of affectedCartIds) {
+                    const remainingItems = await tx.cartItem.findMany({
+                        where: { cartId },
+                    });
+
+                    const totalQuantity = remainingItems.reduce(
+                        (sum, item) => sum + item.quantity,
+                        0
+                    );
+
+                    const total = remainingItems.reduce(
+                        (sum, item) => sum + Number(item.price) * item.quantity,
+                        0
+                    );
+
+                    await tx.cart.update({
+                        where: { id: cartId },
+                        data: {
+                            totalQuantity,
+                            total,
+                        },
+                    });
+                }
+            }
+
+            await tx.product.delete({
+                where: { id },
+            });
         });
 
         return NextResponse.json({

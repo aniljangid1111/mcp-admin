@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
+import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -9,6 +10,13 @@ export async function POST(request) {
     let orderId;
 
     try {
+        // Rate limit: 10 checkout session creations per 60 seconds per IP
+        const clientIp = getClientIp(request);
+        const rateLimit = await checkRateLimit(`checkout:${clientIp}`, 10, 60);
+        if (!rateLimit.success) {
+            return rateLimitResponse(rateLimit);
+        }
+
         const { cartId } = await request.json();
 
         if (!cartId) {
@@ -84,6 +92,36 @@ export async function POST(request) {
                 { success: false, error: "Order total must be greater than zero" },
                 { status: 400 }
             );
+        }
+
+        // Prevent duplicate pending orders: check if an unexpired session exists for this cart
+        const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+        const existingRecentOrder = await prisma.order.findFirst({
+            where: {
+                cartId: cart.id,
+                status: "PENDING",
+                totalAmount: subtotalAmount,
+                createdAt: { gte: fifteenMinutesAgo },
+            },
+            include: { payment: true },
+            orderBy: { createdAt: "desc" },
+        });
+
+        if (existingRecentOrder?.payment?.stripeCheckoutSessionId) {
+            try {
+                const existingSession = await stripe.checkout.sessions.retrieve(
+                    existingRecentOrder.payment.stripeCheckoutSessionId
+                );
+                if (existingSession.status === "open" && existingSession.url) {
+                    return NextResponse.json({
+                        success: true,
+                        orderId: existingRecentOrder.id,
+                        url: existingSession.url,
+                    });
+                }
+            } catch {
+                // If retrieval fails or session expired, continue to create fresh order
+            }
         }
 
         // Create a pending order before redirecting to Stripe.

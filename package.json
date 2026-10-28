@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint app lib"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",
@@ -15,7 +15,7 @@
     "cloudinary": "^2.11.0",
     "dotenv": "^18.0.6",
     "jose": "^6.2.12",
-    "next": "16.4.0",
+    "next": "^16.4.3",
     "nodemailer": "^10.1.2",
     "pdf-parse": "^2.4.5",
     "pg": "^8.23.1",
@@ -31,7 +31,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.4.0",
+    "eslint-config-next": "^16.4.3",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

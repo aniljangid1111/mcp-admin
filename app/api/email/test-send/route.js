@@ -1,16 +1,46 @@
 import { NextResponse } from "next/server";
 import { sendOrderConfirmationEmail } from "@/lib/mail";
+import { authenticateAdminRequest } from "@/lib/auth";
 
 export async function POST(request) {
   try {
-    const body = await request.json().catch(() => ({}));
-    const targetEmail = body.to || process.env.OWNER_EMAIL;
-
-    if (!targetEmail) {
+    // 1. Disable in production unless explicitly opted in via ENABLE_EMAIL_TEST
+    if (
+      process.env.NODE_ENV === "production" &&
+      process.env.ENABLE_EMAIL_TEST !== "true"
+    ) {
       return NextResponse.json(
         {
           success: false,
-          error: "Recipient email is required (provide in JSON body 'to' or set OWNER_EMAIL in .env)",
+          error: "Email test endpoint is disabled in production.",
+        },
+        { status: 403 }
+      );
+    }
+
+    // 2. Strict Server-side Admin Authentication
+    const admin = await authenticateAdminRequest(request);
+    if (!admin) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Unauthorized. Admin authentication required.",
+        },
+        { status: 401 }
+      );
+    }
+
+    // 3. Strict Recipient Validation
+    const body = await request.json().catch(() => ({}));
+    const rawTo = typeof body.to === "string" ? body.to.trim() : "";
+    const targetEmail = rawTo || process.env.OWNER_EMAIL;
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!targetEmail || !emailRegex.test(targetEmail)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "A valid recipient email address is required.",
         },
         { status: 400 }
       );
@@ -18,7 +48,7 @@ export async function POST(request) {
 
     const sampleOrder = {
       id: "TEST-ORDER-101",
-      customerName: body.name || "Test Customer",
+      customerName: typeof body.name === "string" && body.name.trim() ? body.name.trim() : "Cleanergy Test Admin",
       customerEmail: targetEmail,
       customerPhone: "+1 (555) 019-2834",
       currency: "usd",
@@ -47,7 +77,8 @@ export async function POST(request) {
 
     return NextResponse.json({
       success: result.success && (result.customerSent || result.ownerSent),
-      result,
+      customerSent: result.customerSent,
+      ownerSent: result.ownerSent,
     });
   } catch (error) {
     console.error("[Test Mail Error]:", error);

@@ -44,17 +44,43 @@ export async function PATCH(
     try {
         const { cartId, lineId } = await params;
 
-        const body = await request.json();
-        const { quantity } = body;
-
-        if (quantity <= 0) {
+        if (!cartId || !lineId) {
             return NextResponse.json(
                 {
                     success: false,
-                    message:
-                        "Quantity must be greater than 0",
+                    message: "Cart ID and line ID are required",
                 },
                 { status: 400 }
+            );
+        }
+
+        const body = await request.json();
+        const { quantity } = body;
+
+        const numQuantity = Number(quantity);
+        if (!Number.isInteger(numQuantity) || numQuantity <= 0) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message: "Quantity must be a positive integer",
+                },
+                { status: 400 }
+            );
+        }
+
+        const cart = await prisma.cart.findUnique({
+            where: {
+                id: cartId,
+            },
+        });
+
+        if (!cart) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message: "Cart not found",
+                },
+                { status: 404 }
             );
         }
 
@@ -80,16 +106,16 @@ export async function PATCH(
                 id: lineId,
             },
             data: {
-                quantity,
+                quantity: numQuantity,
             },
         });
 
-        const cart = await recalculateCart(cartId);
+        const updatedCart = await recalculateCart(cartId);
 
         return NextResponse.json({
             success: true,
             message: "Cart quantity updated",
-            cart,
+            cart: updatedCart,
         });
     } catch (error) {
         console.error("Update cart error:", error);
@@ -110,6 +136,32 @@ export async function DELETE(
 ) {
     try {
         const { cartId, lineId } = await params;
+
+        if (!cartId || !lineId) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message: "Cart ID and line ID are required",
+                },
+                { status: 400 }
+            );
+        }
+
+        const cart = await prisma.cart.findUnique({
+            where: {
+                id: cartId,
+            },
+        });
+
+        if (!cart) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message: "Cart not found",
+                },
+                { status: 404 }
+            );
+        }
 
         const item = await prisma.cartItem.findFirst({
             where: {
@@ -134,12 +186,12 @@ export async function DELETE(
             },
         });
 
-        const cart = await recalculateCart(cartId);
+        const updatedCart = await recalculateCart(cartId);
 
         return NextResponse.json({
             success: true,
             message: "Product removed from cart",
-            cart,
+            cart: updatedCart,
         });
     } catch (error) {
         console.error("Remove cart item error:", error);

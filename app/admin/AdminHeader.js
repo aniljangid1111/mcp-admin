@@ -2,17 +2,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 export default function AdminHeader() {
-  const pathname = usePathname() || "";
   const [loggingOut, setLoggingOut] = useState(false);
 
-  // Always reset loggingOut state when route or component renders
-  useEffect(() => {
-    setLoggingOut(false);
-  }, [pathname]);
 
   async function handleLogout() {
     setLoggingOut(true);

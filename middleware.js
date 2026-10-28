@@ -3,22 +3,18 @@ import { jwtVerify } from "jose";
 
 const COOKIE_NAME = "cleanergy_admin_token";
 
-const JWT_SECRET_STRING =
-  process.env.ADMIN_JWT_SECRET ||
-  process.env.STRIPE_SECRET_KEY ||
-  "cleanergy-battery-secure-admin-secret-2026";
-
-const JWT_SECRET = new TextEncoder().encode(JWT_SECRET_STRING);
-
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get(COOKIE_NAME)?.value;
 
   let isAuthenticated = false;
+  const secretString = process.env.ADMIN_JWT_SECRET?.trim();
 
-  if (token) {
+  // Strictly enforce dedicated secret with minimum 32 characters
+  if (token && secretString && secretString.length >= 32) {
     try {
-      await jwtVerify(token, JWT_SECRET);
+      const secret = new TextEncoder().encode(secretString);
+      await jwtVerify(token, secret);
       isAuthenticated = true;
     } catch {
       isAuthenticated = false;

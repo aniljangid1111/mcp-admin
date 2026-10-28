@@ -1,8 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit";
 
 export async function POST(request) {
     try {
+        // Rate limit: 30 cart actions per 60 seconds per IP
+        const clientIp = getClientIp(request);
+        const rateLimit = await checkRateLimit(`cart:${clientIp}`, 30, 60);
+        if (!rateLimit.success) {
+            return rateLimitResponse(rateLimit);
+        }
+
         const body = await request.json();
 
         const {
@@ -11,7 +19,7 @@ export async function POST(request) {
             quantity = 1,
         } = body;
 
-        if (!productId) {
+        if (!productId || typeof productId !== "string") {
             return NextResponse.json(
                 {
                     success: false,
@@ -21,11 +29,12 @@ export async function POST(request) {
             );
         }
 
-        if (quantity <= 0) {
+        const numQuantity = Number(quantity);
+        if (!Number.isInteger(numQuantity) || numQuantity <= 0) {
             return NextResponse.json(
                 {
                     success: false,
-                    message: "Quantity must be greater than 0",
+                    message: "Quantity must be a positive integer",
                 },
                 { status: 400 }
             );
@@ -50,14 +59,32 @@ export async function POST(request) {
         let cart;
 
         if (cartId) {
+            if (typeof cartId !== "string" || !cartId.trim()) {
+                return NextResponse.json(
+                    {
+                        success: false,
+                        message: "Invalid cart ID",
+                    },
+                    { status: 400 }
+                );
+            }
+
             cart = await prisma.cart.findUnique({
                 where: {
-                    id: cartId,
+                    id: cartId.trim(),
                 },
             });
-        }
 
-        if (!cart) {
+            if (!cart) {
+                return NextResponse.json(
+                    {
+                        success: false,
+                        message: "Cart not found",
+                    },
+                    { status: 404 }
+                );
+            }
+        } else {
             cart = await prisma.cart.create({
                 data: {
                     currencyCode: "USD",
@@ -82,7 +109,8 @@ export async function POST(request) {
                     id: existingItem.id,
                 },
                 data: {
-                    quantity: existingItem.quantity + quantity,
+                    quantity: existingItem.quantity + numQuantity,
+                    price: product.price,
                 },
             });
         } else {
@@ -90,7 +118,7 @@ export async function POST(request) {
                 data: {
                     cartId: cart.id,
                     productId: product.id,
-                    quantity,
+                    quantity: numQuantity,
                     price: product.price,
                 },
             });

@@ -7,8 +7,6 @@ import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-export const dynamic = "force-dynamic";
-
 export async function GET(request) {
   try {
     // 1. Rate limiting: 30 verification checks per minute per IP

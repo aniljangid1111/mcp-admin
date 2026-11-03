@@ -48,6 +48,7 @@ export async function PUT(request, { params }) {
 
         const {
             name,
+            code,
             price,
             content,
             imageUrl,
@@ -79,6 +80,7 @@ export async function PUT(request, { params }) {
             where: { id },
             data: {
                 name: name.trim(),
+                ...(code !== undefined && { code: code ? code.trim() : null }),
                 price: Number(price),
                 content: content.trim(),
                 ...(imageUrl !== undefined && { imageUrl }),

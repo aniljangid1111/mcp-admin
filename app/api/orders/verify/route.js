@@ -117,6 +117,7 @@ export async function GET(request) {
     const sanitizedOrder = {
       id: updatedOrder.id,
       status: verifiedStatus,
+      source: updatedOrder.source || "WEB",
       currency: updatedOrder.currency,
       totalAmount: updatedOrder.totalAmount,
       subtotalAmount: updatedOrder.subtotalAmount,

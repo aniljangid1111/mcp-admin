@@ -71,7 +71,8 @@ export default function DashboardPage() {
 
 
     const filteredProducts = products.filter((product) =>
-        product.name.toLowerCase().includes(search.toLowerCase())
+        product.name.toLowerCase().includes(search.toLowerCase()) ||
+        (product.code && product.code.toLowerCase().includes(search.toLowerCase()))
     );
 
 
@@ -246,9 +247,16 @@ export default function DashboardPage() {
                                                     )}
 
                                                     <div className="max-w-xs">
-                                                        <p className="font-medium text-gray-900">
-                                                            {product.name}
-                                                        </p>
+                                                        <div className="flex flex-wrap items-center gap-1.5">
+                                                            <p className="font-medium text-gray-900">
+                                                                {product.name}
+                                                            </p>
+                                                            {product.code && (
+                                                                <span className="inline-flex items-center rounded-md bg-gray-100 px-1.5 py-0.5 text-[11px] font-mono font-semibold text-gray-700 ring-1 ring-gray-600/10">
+                                                                    {product.code}
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                         <p className="mt-1 truncate text-xs text-gray-500">
                                                             {product.content}
                                                         </p>

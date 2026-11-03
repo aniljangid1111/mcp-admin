@@ -17,7 +17,8 @@ export async function POST(request) {
             return rateLimitResponse(rateLimit);
         }
 
-        const { cartId } = await request.json();
+        const { cartId, source } = await request.json();
+        const orderSource = source && String(source).toUpperCase() === "WEB" ? "WEB" : "MCP";
 
         if (!cartId) {
             return NextResponse.json(
@@ -128,6 +129,7 @@ export async function POST(request) {
         const order = await prisma.order.create({
             data: {
                 cartId: cart.id,
+                source: orderSource,
                 currency: cart.currencyCode.toLowerCase(),
                 subtotalAmount,
                 totalAmount: subtotalAmount,
@@ -184,6 +186,7 @@ export async function POST(request) {
             metadata: {
                 orderId: order.id,
                 cartId: cart.id,
+                source: orderSource,
             },
         });
 

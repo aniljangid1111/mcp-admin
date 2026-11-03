@@ -16,6 +16,7 @@ export async function POST(request) {
 
     const {
       name,
+      code,
       price,
       content,
       imageUrl,
@@ -39,6 +40,7 @@ export async function POST(request) {
     const product = await prisma.product.create({
       data: {
         name,
+        code: code?.trim() || null,
         price: Number(price),
         content,
         documentUrl: documentUrl || null,

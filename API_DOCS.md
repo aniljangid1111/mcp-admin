@@ -76,7 +76,7 @@ Base URL: `http://localhost:3000` (Local) / `https://mcp-admin-7pwd.vercel.app` 
 * **Body:**
   ```json
   {
-    "productId": "PRODUCT_ID",
+    "productId": "CLEANERGY-01", // Accepts Product ID, Code (e.g. CLEANERGY-01), or numeric ID ("1")
     "quantity": 1,
     "cartId": "OPTIONAL_EXISTING_CART_ID"
   }
@@ -101,14 +101,15 @@ Base URL: `http://localhost:3000` (Local) / `https://mcp-admin-7pwd.vercel.app` 
 * **Body:**
   ```json
   {
-    "cartId": "CART_ID"
+    "cartId": "CART_ID",
+    "source": "WEB" // "WEB" for Website, "MCP" for ChatGPT MCP Server (Default: "WEB")
   }
   ```
-* **Response:** `{ "success": true, "url": "https://checkout.stripe.com/..." }`
+* **Response:** `{ "success": true, "orderId": "...", "url": "https://checkout.stripe.com/..." }`
 
 ### 4.2 Verify Payment (Post-Checkout)
 * **Method:** `GET /api/orders/verify?orderId=ORDER_ID&session_id=CHECKOUT_SESSION_ID`
-* **Response:** `{ "success": true, "status": "PAID", "order": { ... } }`
+* **Response:** `{ "success": true, "status": "PAID", "order": { "id": "...", "source": "WEB", ... } }`
 
 ### 4.3 Stripe Webhook
 * **Method:** `POST /api/stripe/webhook`
@@ -118,8 +119,13 @@ Base URL: `http://localhost:3000` (Local) / `https://mcp-admin-7pwd.vercel.app` 
 
 ## 5. Orders Management APIs `[Protected]`
 
-### 5.1 List Orders (Pagination, Search, Stats)
-* **Method:** `GET /api/orders?page=1&limit=10&status=ALL&search=`
+### 5.1 List Orders (Pagination, Search, Stats, Channels)
+* **Method:** `GET /api/orders?page=1&limit=10&status=ALL&source=ALL&search=`
+* **Query Params:**
+  - `status`: `ALL` | `PAID` | `PENDING` | `CANCELLED` | `FAILED`
+  - `source`: `ALL` | `WEB` (Website) | `MCP` (ChatGPT MCP)
+  - `search`: Search customer name, email, phone, product name, or order ID
+  - `page`, `limit`: Pagination parameters
 
 ### 5.2 Get Order by ID
 * **Method:** `GET /api/orders/:id`

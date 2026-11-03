@@ -9,6 +9,7 @@ datasource db {
 
 model Product {
   id              String     @id @default(cuid())
+  code            String?    @unique
   name            String
   price           Decimal    @db.Decimal(10, 2)
   imageUrl        String?
@@ -68,6 +69,7 @@ model Order {
   id                String      @id @default(cuid())
   cartId            String
   status            OrderStatus @default(PENDING)
+  source            String      @default("WEB")
 
   customerName      String?
   customerEmail     String?
@@ -90,6 +92,7 @@ model Order {
 
   @@index([cartId])
   @@index([status])
+  @@index([source])
   @@index([customerEmail])
 }
 

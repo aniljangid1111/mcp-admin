@@ -12,6 +12,8 @@ export default function OrdersPage() {
     pendingOrders: 0,
     cancelledOrders: 0,
     failedOrders: 0,
+    webOrders: 0,
+    mcpOrders: 0,
     totalRevenue: 0,
   });
   const [pagination, setPagination] = useState({
@@ -25,7 +27,9 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [sourceFilter, setSourceFilter] = useState("ALL");
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
@@ -40,6 +44,7 @@ export default function OrdersPage() {
         limit: pageSize.toString(),
       });
       if (statusFilter && statusFilter !== "ALL") params.set("status", statusFilter);
+      if (sourceFilter && sourceFilter !== "ALL") params.set("source", sourceFilter);
       if (search && search.trim() !== "") params.set("search", search.trim());
 
       const response = await fetch(`/api/orders?${params.toString()}`, {
@@ -61,19 +66,30 @@ export default function OrdersPage() {
     }
   }
 
-  // Effect to load and filter with debounce
+  // Debounce only the search text input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // Instant data fetching on filter/page change
   useEffect(() => {
     let ignore = false;
 
-    const timer = setTimeout(async () => {
+    async function fetchData() {
       try {
+        setLoading(true);
         setError("");
         const params = new URLSearchParams({
           page: page.toString(),
           limit: pageSize.toString(),
         });
         if (statusFilter && statusFilter !== "ALL") params.set("status", statusFilter);
-        if (search && search.trim() !== "") params.set("search", search.trim());
+        if (sourceFilter && sourceFilter !== "ALL") params.set("source", sourceFilter);
+        if (debouncedSearch && debouncedSearch.trim() !== "") params.set("search", debouncedSearch.trim());
 
         const response = await fetch(`/api/orders?${params.toString()}`, {
           cache: "no-store",
@@ -97,13 +113,14 @@ export default function OrdersPage() {
           setLoading(false);
         }
       }
-    }, 250);
+    }
+
+    fetchData();
 
     return () => {
       ignore = true;
-      clearTimeout(timer);
     };
-  }, [page, pageSize, statusFilter, search]);
+  }, [page, pageSize, statusFilter, sourceFilter, debouncedSearch]);
 
   // Copy order ID helper
   function handleCopyId(id) {
@@ -185,6 +202,24 @@ export default function OrdersPage() {
     }
   }
 
+  function renderSourceBadge(source) {
+    const isMcp = source?.toUpperCase() === "MCP";
+    if (isMcp) {
+      return (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-50 px-2.5 py-1 text-xs font-semibold text-purple-700 ring-1 ring-purple-600/20">
+          <span className="h-1.5 w-1.5 rounded-full bg-purple-500"></span>
+          ChatGPT MCP
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 ring-1 ring-blue-600/20">
+        <span className="h-1.5 w-1.5 rounded-full bg-blue-500"></span>
+        Website
+      </span>
+    );
+  }
+
   function formatPrice(cents, currency = "USD") {
     if (cents === null || cents === undefined) return "$0.00";
     return new Intl.NumberFormat("en-US", {
@@ -259,7 +294,7 @@ export default function OrdersPage() {
         </div>
 
         {/* Metric Cards */}
-        <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-6">
           <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <p className="text-xs font-medium uppercase tracking-wider text-gray-500">
@@ -278,17 +313,33 @@ export default function OrdersPage() {
 
           <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-medium uppercase tracking-wider text-gray-500">
-                Total Revenue
+              <p className="text-xs font-medium uppercase tracking-wider text-blue-600">
+                Website
               </p>
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
                 </svg>
               </span>
             </div>
-            <p className="mt-3 text-2xl font-bold text-emerald-600 sm:text-3xl">
-              {loading && !stats.totalRevenue ? "..." : formatPrice(stats.totalRevenue)}
+            <p className="mt-3 text-2xl font-bold text-blue-600 sm:text-3xl">
+              {loading && !stats.totalOrders ? "..." : stats.webOrders || 0}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-medium uppercase tracking-wider text-purple-600">
+                ChatGPT MCP
+              </p>
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-50 text-purple-600">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                </svg>
+              </span>
+            </div>
+            <p className="mt-3 text-2xl font-bold text-purple-600 sm:text-3xl">
+              {loading && !stats.totalOrders ? "..." : stats.mcpOrders || 0}
             </p>
           </div>
 
@@ -323,61 +374,109 @@ export default function OrdersPage() {
               {loading && !stats.pendingOrders ? "..." : stats.pendingOrders}
             </p>
           </div>
+
+          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-medium uppercase tracking-wider text-gray-500">
+                Total Revenue
+              </p>
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </span>
+            </div>
+            <p className="mt-3 text-2xl font-bold text-emerald-600 sm:text-3xl">
+              {loading && !stats.totalRevenue ? "..." : formatPrice(stats.totalRevenue)}
+            </p>
+          </div>
         </div>
 
         {/* Orders Table Container */}
         <section className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
           {/* Header toolbar with search & status filters */}
           <div className="flex flex-col gap-4 border-b border-gray-200 p-5 sm:flex-row sm:items-center sm:justify-between">
-            {/* Status pills */}
-            <div className="flex flex-wrap items-center gap-1.5">
-              {[
-                { label: "All", value: "ALL", count: stats.totalOrders },
-                {
-                  label: "Paid",
-                  value: "PAID",
-                  count: stats.paidOrders,
-                },
-                {
-                  label: "Pending",
-                  value: "PENDING",
-                  count: stats.pendingOrders,
-                },
-                {
-                  label: "Cancelled",
-                  value: "CANCELLED",
-                  count: stats.cancelledOrders,
-                },
-                {
-                  label: "Failed",
-                  value: "FAILED",
-                  count: stats.failedOrders,
-                },
-              ].map((tab) => (
-                <button
-                  key={tab.value}
-                  onClick={() => {
-                    setStatusFilter(tab.value);
-                    setPage(1);
-                  }}
-                  className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition ${
-                    statusFilter === tab.value
-                      ? "bg-black text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
-                >
-                  {tab.label}
-                  <span
-                    className={`rounded-full px-1.5 py-0.2 text-[10px] ${
-                      statusFilter === tab.value
-                        ? "bg-gray-800 text-white"
-                        : "bg-gray-200 text-gray-700"
+            {/* Status pills & Channel filter */}
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Channel filter */}
+              <div className="flex items-center rounded-lg bg-gray-100 p-1">
+                {[
+                  { label: "All Channels", value: "ALL" },
+                  { label: "Website", value: "WEB", count: stats.webOrders },
+                  { label: "ChatGPT MCP", value: "MCP", count: stats.mcpOrders },
+                ].map((src) => (
+                  <button
+                    key={src.value}
+                    onClick={() => {
+                      setSourceFilter(src.value);
+                      setPage(1);
+                    }}
+                    className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition ${
+                      sourceFilter === src.value
+                        ? "bg-white text-gray-900 shadow-xs font-semibold"
+                        : "text-gray-600 hover:text-gray-900"
                     }`}
                   >
-                    {tab.count}
-                  </span>
-                </button>
-              ))}
+                    {src.label}
+                    {src.count !== undefined && (
+                      <span className="text-[10px] text-gray-400">({src.count})</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              <div className="h-4 w-px bg-gray-300 hidden sm:block" />
+
+              {/* Status pills */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                {[
+                  { label: "All Status", value: "ALL", count: stats.totalOrders },
+                  {
+                    label: "Paid",
+                    value: "PAID",
+                    count: stats.paidOrders,
+                  },
+                  {
+                    label: "Pending",
+                    value: "PENDING",
+                    count: stats.pendingOrders,
+                  },
+                  {
+                    label: "Cancelled",
+                    value: "CANCELLED",
+                    count: stats.cancelledOrders,
+                  },
+                  {
+                    label: "Failed",
+                    value: "FAILED",
+                    count: stats.failedOrders,
+                  },
+                ].map((tab) => (
+                  <button
+                    key={tab.value}
+                    onClick={() => {
+                      setStatusFilter(tab.value);
+                      setPage(1);
+                    }}
+                    className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                      statusFilter === tab.value
+                        ? "bg-black text-white"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                  >
+                    {tab.label}
+                    <span
+                      className={`rounded-full px-1.5 py-0.2 text-[10px] ${
+                        statusFilter === tab.value
+                          ? "bg-gray-800 text-white"
+                          : "bg-gray-200 text-gray-700"
+                      }`}
+                    >
+                      {tab.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Search input */}
@@ -441,11 +540,12 @@ export default function OrdersPage() {
                   ? "Try adjusting your search terms or filters."
                   : "When customers complete checkout, orders will appear here."}
               </p>
-              {(search || statusFilter !== "ALL") && (
+              {(search || statusFilter !== "ALL" || sourceFilter !== "ALL") && (
                 <button
                   onClick={() => {
                     setSearch("");
                     setStatusFilter("ALL");
+                    setSourceFilter("ALL");
                     setPage(1);
                   }}
                   className="mt-4 inline-block rounded-lg border border-gray-300 bg-white px-3.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
@@ -460,6 +560,7 @@ export default function OrdersPage() {
                 <thead className="bg-gray-50 text-xs font-medium uppercase tracking-wider text-gray-500">
                   <tr>
                     <th className="px-5 py-3.5">Order ID</th>
+                    <th className="px-5 py-3.5">Channel</th>
                     <th className="px-5 py-3.5">Customer</th>
                     <th className="px-5 py-3.5">Items</th>
                     <th className="px-5 py-3.5">Total Amount</th>
@@ -510,6 +611,11 @@ export default function OrdersPage() {
                               )}
                             </button>
                           </div>
+                        </td>
+
+                        {/* Channel */}
+                        <td className="whitespace-nowrap px-5 py-4">
+                          {renderSourceBadge(order.source)}
                         </td>
 
                         {/* Customer */}
@@ -699,6 +805,7 @@ export default function OrdersPage() {
                       Order Details
                     </h3>
                     {getStatusBadge(selectedOrder.status)}
+                    {renderSourceBadge(selectedOrder.source)}
                   </div>
                   <p className="text-xs text-gray-500">
                     ID: {selectedOrder.id} • Placed on {formatDate(selectedOrder.createdAt)}

@@ -14,6 +14,7 @@ export async function GET(request) {
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
+    const sourceParam = searchParams.get("source");
     const search = searchParams.get("search");
     const pageParam = parseInt(searchParams.get("page") || "1", 10);
     const limitParam = parseInt(searchParams.get("limit") || "10", 10);
@@ -26,6 +27,10 @@ export async function GET(request) {
 
     if (status && status !== "ALL") {
       where.status = status;
+    }
+
+    if (sourceParam && sourceParam !== "ALL") {
+      where.source = sourceParam.toUpperCase();
     }
 
     if (search && search.trim() !== "") {
@@ -57,6 +62,7 @@ export async function GET(request) {
         select: {
           status: true,
           totalAmount: true,
+          source: true,
         },
       }),
     ]);
@@ -69,6 +75,8 @@ export async function GET(request) {
       pendingOrders: allOrders.filter((o) => o.status === "PENDING").length,
       cancelledOrders: allOrders.filter((o) => o.status === "CANCELLED").length,
       failedOrders: allOrders.filter((o) => o.status === "FAILED").length,
+      webOrders: allOrders.filter((o) => o.source === "WEB").length,
+      mcpOrders: allOrders.filter((o) => o.source === "MCP").length,
       totalRevenue: allOrders
         .filter((o) => o.status === "PAID")
         .reduce((sum, o) => sum + (o.totalAmount || 0), 0),

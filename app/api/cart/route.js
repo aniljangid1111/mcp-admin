@@ -40,9 +40,24 @@ export async function POST(request) {
             );
         }
 
-        const product = await prisma.product.findUnique({
+        const cleanProductId = String(productId).trim();
+        const codeMap = {
+            "1": "CLEANERGY-01",
+            "2": "CLEANERGY-02",
+            "3": "CLEANERGY-03",
+            "4": "CLEANERGY-04",
+            "5": "CLEANERGY-05",
+            "6": "CLEANERGY-06"
+        };
+        const searchCode = codeMap[cleanProductId] || cleanProductId;
+
+        const product = await prisma.product.findFirst({
             where: {
-                id: productId,
+                OR: [
+                    { id: cleanProductId },
+                    { code: cleanProductId },
+                    { code: searchCode }
+                ]
             },
         });
 

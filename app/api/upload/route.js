@@ -1,13 +1,10 @@
 import { NextResponse } from "next/server";
-import fs from "fs/promises";
-import path from "path";
-import os from "os";
-import cloudinary from "@/lib/cloudinary";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { r2Client, R2_BUCKET, R2_PUBLIC_URL } from "@/lib/r2";
 import { extractPdfSpecs } from "@/lib/pdfAnalyzer";
 import { authenticateAdminRequest } from "@/lib/auth";
 
 export async function POST(request) {
-  let tempFilePath = null;
   try {
     const admin = await authenticateAdminRequest(request);
     if (!admin) {
@@ -50,53 +47,54 @@ export async function POST(request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Prepare temp file path
+    // Prepare path and public key
     const originalName = file.name || (isImage ? "image.png" : "document.pdf");
     const sanitizedBase = originalName
       .replace(/\.[^/.]+$/, "")
       .replace(/[^a-zA-Z0-9-_]/g, "_");
     const extension = isPdf ? ".pdf" : originalName.slice(originalName.lastIndexOf("."));
-    const publicId = `${Date.now()}_${sanitizedBase}${extension}`;
-
-    tempFilePath = path.join(os.tmpdir(), `upload_${Date.now()}_${sanitizedBase}${extension}`);
-    await fs.writeFile(tempFilePath, buffer);
+    const folder = isImage ? "products" : "documents";
+    const key = `${folder}/${Date.now()}_${sanitizedBase}${extension}`;
 
     // Extract PDF Specifications with unpdf
     let extracted = null;
     if (isPdf) {
       try {
-        const fileContent = await fs.readFile(tempFilePath);
-        extracted = await extractPdfSpecs(fileContent);
+        extracted = await extractPdfSpecs(buffer);
       } catch (parseErr) {
         console.error("PDF parse error:", parseErr);
       }
     }
 
-    const result = await cloudinary.uploader.upload(tempFilePath, {
-      folder: isImage ? "cleanergy/products" : "cleanergy/documents",
-      resource_type: isImage ? "image" : "raw",
-      public_id: publicId,
-    });
+    // Upload directly to Cloudflare R2
+    const contentType = file.type || (isImage ? "image/jpeg" : isPdf ? "application/pdf" : "application/octet-stream");
 
-    // Delete temp file after upload
-    await fs.unlink(tempFilePath).catch(() => {});
-    tempFilePath = null;
+    await r2Client.send(
+      new PutObjectCommand({
+        Bucket: R2_BUCKET,
+        Key: key,
+        Body: buffer,
+        ContentType: contentType,
+      })
+    );
+
+    const publicUrl = `${R2_PUBLIC_URL}/${key}`;
 
     if (isImage) {
       return NextResponse.json({
         success: true,
         fileType: "image",
-        imageUrl: result.secure_url,
-        publicId: result.public_id,
+        imageUrl: publicUrl,
+        publicId: key,
       });
     }
 
     return NextResponse.json({
       success: true,
       fileType: isPdf ? "pdf" : "doc",
-      documentUrl: result.secure_url,
+      documentUrl: publicUrl,
       documentName: originalName,
-      publicId: result.public_id,
+      publicId: key,
       specifications: extracted?.specifications || null,
       fullAnalysis: extracted?.fullAnalysis || null,
       pdfText: extracted?.pdfText || null,
@@ -104,9 +102,6 @@ export async function POST(request) {
       metadata: extracted?.metadata || null,
     });
   } catch (error) {
-    if (tempFilePath) {
-      await fs.unlink(tempFilePath).catch(() => {});
-    }
     console.error("Upload handler error:", error);
 
     return NextResponse.json(
